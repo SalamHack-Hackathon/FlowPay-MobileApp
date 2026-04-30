@@ -1,0 +1,33 @@
+<resources>
+    <string name="app_name">FlowPay</string>
+
+    <!-- Auth Screen -->
+    <string name="auth_login_title">FlowPay</string>
+    <string name="auth_login_subtitle">أهلاً بك مجدداً في محفظتك الرقمية</string>
+    <string name="auth_register_title">إنشاء حساب جديد</string>
+    <string name="auth_register_subtitle">انضم إلى النخبة واستمتع بتجربة مالية استثنائية.</string>
+
+    <!-- Fields -->
+    <string name="auth_full_name">الاسم الكامل</string>
+    <string name="auth_full_name_hint">أدخل اسمك الكامل</string>
+    <string name="auth_email">البريد الإلكتروني</string>
+    <string name="auth_email_hint">name@example.com</string>
+    <string name="auth_phone">رقم الهاتف</string>
+    <string name="auth_phone_hint">5X XXX XXXX</string>
+    <string name="auth_password">كلمة المرور</string>
+    <string name="auth_password_hint_login">••••••</string>
+    <string name="auth_password_hint_register">8+ أحرف، رقم، رمز</string>
+    <string name="auth_confirm_password">تأكيد كلمة المرور</string>
+    <string name="auth_confirm_password_hint">أعد إدخال كلمة المرور</string>
+
+    <!-- Buttons -->
+    <string name="auth_login_button">تسجيل الدخول</string>
+    <string name="auth_register_button">إنشاء الحساب</string>
+    <string name="auth_forgot_password">نسيت كلمة المرور؟</string>
+
+    <!-- Toggle Links -->
+    <string name="auth_no_account">ليس لديك حساب؟</string>
+    <string name="auth_register_now">سجل الآن</string>
+    <string name="auth_has_account">لديك حساب بالفعل؟</string>
+    <string name="auth_login_now">تسجيل الدخول</string>
+</resources>
