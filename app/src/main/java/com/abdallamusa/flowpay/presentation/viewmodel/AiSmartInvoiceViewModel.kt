@@ -2,7 +2,7 @@ package com.abdallamusa.flowpay.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.abdallamusa.flowpay.data.repository.FakeFlowPayRepositoryImpl
+import com.abdallamusa.flowpay.domain.repository.FlowPayRepository
 import com.abdallamusa.flowpay.domain.model.Invoice
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,12 +14,13 @@ import javax.inject.Inject
 data class AiInvoiceUiState(
     val isLoading: Boolean = false,
     val generatedInvoice: Invoice? = null,
-    val error: String? = null
+    val error: String? = null,
+    val isSaved: Boolean = false
 )
 
 @HiltViewModel
 class AiSmartInvoiceViewModel @Inject constructor(
-    private val repository: FakeFlowPayRepositoryImpl
+    private val repository: FlowPayRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AiInvoiceUiState())
@@ -44,10 +45,12 @@ class AiSmartInvoiceViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value.generatedInvoice?.let { invoice ->
                 try {
-                    repository.addInvoice(invoice)
-                    _uiState.value = AiInvoiceUiState()
+                    // Set status to PENDING when confirming the invoice
+                    val confirmedInvoice = invoice.copy(status = com.abdallamusa.flowpay.domain.model.InvoiceStatus.PENDING)
+                    repository.addInvoice(confirmedInvoice)
+                    _uiState.value = _uiState.value.copy(isSaved = true, generatedInvoice = null)
                 } catch (e: Exception) {
-                    _uiState.value = AiInvoiceUiState(
+                    _uiState.value = _uiState.value.copy(
                         error = e.message ?: "Failed to add invoice"
                     )
                 }

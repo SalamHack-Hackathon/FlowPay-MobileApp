@@ -80,7 +80,27 @@ object ValidationUtils {
         }
     }
 
+    // ==================== Numeric Amount Validation ====================
+    fun validateAmount(amount: String): ValidationResult {
+        return when {
+            amount.isBlank() -> ValidationResult.Invalid("المبلغ مطلوب")
+            !amount.matches(Regex("^\\d*\\.?\\d+$")) -> 
+                ValidationResult.Invalid("المبلغ يجب أن يكون رقماً")
+            amount.toDoubleOrNull() == null -> ValidationResult.Invalid("المبلغ غير صالح")
+            amount.toDouble() <= 0 -> ValidationResult.Invalid("المبلغ يجب أن يكون أكبر من صفر")
+            amount.toDouble() > 1000000000 -> ValidationResult.Invalid("المبلغ كبير جداً")
+            else -> ValidationResult.Valid
+        }
+    }
+
     // ==================== Helper Extensions ====================
     fun ValidationResult.isValid(): Boolean = this is ValidationResult.Valid
     fun ValidationResult.getError(): String? = (this as? ValidationResult.Invalid)?.errorMessage
+
+    // ==================== Input Filter Extensions ====================
+    fun String.filterNumericInput(): String {
+        return this.filter { it.isDigit() || it == '.' }
+            .replace(Regex("^\\."), "0.")
+            .replace(Regex("\\.(?=.*\\.)"), "")
+    }
 }

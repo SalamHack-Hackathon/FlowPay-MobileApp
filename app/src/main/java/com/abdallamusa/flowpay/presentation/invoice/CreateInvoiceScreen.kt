@@ -42,6 +42,7 @@ import com.abdallamusa.flowpay.presentation.components.FlowPayTopAppBar
 import com.abdallamusa.flowpay.presentation.components.TopBarStyle
 import com.abdallamusa.flowpay.ui.theme.BackgroundDark
 import com.abdallamusa.flowpay.ui.theme.EmeraldPrimary
+import com.abdallamusa.flowpay.utils.ValidationUtils.filterNumericInput
 
 @Composable
 fun CreateInvoiceScreen(
@@ -101,10 +102,10 @@ fun CreateInvoiceContent(
 
         CustomTextField(
             value = amount,
-            onValueChange = { amount = it },
+            onValueChange = { amount = it.filterNumericInput() },
             placeholder = Strings.CreateInvoice.AMOUNT_HINT,
             icon = Icons.Default.AttachMoney,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -130,7 +131,12 @@ fun CreateInvoiceContent(
                 containerColor = EmeraldPrimary
             ),
             shape = RoundedCornerShape(12.dp),
-            enabled = !uiState.isLoading
+            enabled = !uiState.isLoading &&
+                    clientName.isNotBlank() &&
+                    amount.isNotBlank() &&
+                    amount.toDoubleOrNull() != null &&
+                    amount.toDoubleOrNull()!! > 0 &&
+                    service.isNotBlank()
         ) {
             Text(
                 text = Strings.CreateInvoice.CREATE,

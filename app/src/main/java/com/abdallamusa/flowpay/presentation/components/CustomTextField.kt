@@ -18,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -34,7 +35,8 @@ fun CustomTextField(
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String,
-    icon: ImageVector,
+    icon: ImageVector?,
+    iconPaint: Painter? = null,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     modifier: Modifier = Modifier,
     onIconClick: (() -> Unit)? = null,
@@ -79,12 +81,21 @@ fun CustomTextField(
                 modifier = iconModifier,
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = SurfaceDark,
-                    modifier = Modifier.size(20.dp)
-                )
+                icon?.let {
+                    Icon(
+                        imageVector = it,
+                        contentDescription = null,
+                        tint = SurfaceDark,
+                        modifier = Modifier.size(20.dp)
+                    )
+                } ?: iconPaint?.let {
+                    Icon(
+                        painter = it,
+                        contentDescription = null,
+                        tint = SurfaceDark,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
 
             BasicTextField(

@@ -30,6 +30,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,9 +43,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.abdallamusa.flowpay.R
 import com.abdallamusa.flowpay.presentation.viewmodel.AiSmartInvoiceViewModel
 import com.abdallamusa.flowpay.presentation.viewmodel.AiInvoiceUiState
 import com.abdallamusa.flowpay.utils.Strings
@@ -71,7 +74,9 @@ fun AiSmartInvoiceScreen(
     val isPreview = LocalInspectionMode.current
     val actualViewModel = if (isPreview) null else (viewModel ?: hiltViewModel())
     var prompt by remember { mutableStateOf("") }
-    val uiState = previewUiState ?: actualViewModel?.uiState?.collectAsState()?.value ?: AiInvoiceUiState()
+    val uiState by (previewUiState?.let { remember { mutableStateOf(it) } } 
+        ?: actualViewModel?.uiState?.collectAsState() 
+        ?: remember { mutableStateOf(AiInvoiceUiState()) })
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -79,6 +84,13 @@ fun AiSmartInvoiceScreen(
             FlowPayTopAppBar(style = TopBarStyle.LogoWithActions)
         }
     ) { paddingValues ->
+        // Observe successful save and navigate
+        LaunchedEffect(uiState.isSaved) {
+            if (uiState.isSaved) {
+                onInvoiceSent()
+            }
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -112,7 +124,8 @@ fun AiSmartInvoiceScreen(
                 value = prompt,
                 onValueChange = { prompt = it },
                 placeholder = Strings.AiInvoice.INPUT_HINT,
-                icon = Icons.AutoMirrored.Filled.Send,
+                icon = null,
+                iconPaint = painterResource(id = R.drawable.send),
                 onIconClick = {
                     if (prompt.isNotBlank()) {
                         actualViewModel?.generateInvoice(prompt)
@@ -194,8 +207,7 @@ fun AiSmartInvoiceScreen(
                     ) {
                         Button(
                             onClick = {
-                                onInvoiceSent()
-                                actualViewModel?.resetState()
+                                actualViewModel?.confirmInvoice()
                             },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(

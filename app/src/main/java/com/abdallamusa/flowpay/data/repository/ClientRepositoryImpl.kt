@@ -21,7 +21,7 @@ class ClientRepositoryImpl @Inject constructor() : ClientRepository {
                 companyName = "شركة التقنية المتقدمة",
                 contactName = "م. طارق عبدالله",
                 amount = 45000.0,
-                currency = "رس",
+                currency = "ر.س",
                 status = PaymentStatus.PENDING,
                 dueDate = "15 أكتوبر 2023"
             ),
@@ -30,7 +30,7 @@ class ClientRepositoryImpl @Inject constructor() : ClientRepository {
                 companyName = "مجموعة الرواد للإعمار",
                 contactName = "خالد السالم",
                 amount = 120500.0,
-                currency = "رس",
+                currency = "ر.س",
                 status = PaymentStatus.PAID,
                 lastPayment = "10 أكتوبر 2023",
                 totalTransactions = 120500.0
@@ -40,7 +40,7 @@ class ClientRepositoryImpl @Inject constructor() : ClientRepository {
                 companyName = "شركة الأفق الرقمية",
                 contactName = "سارة أحمد",
                 amount = 28000.0,
-                currency = "رس",
+                currency = "ر.س",
                 status = PaymentStatus.PENDING,
                 dueDate = "20 أكتوبر 2023"
             ),
@@ -49,7 +49,7 @@ class ClientRepositoryImpl @Inject constructor() : ClientRepository {
                 companyName = "مؤسسة النخبة للخدمات",
                 contactName = "عمر الفهد",
                 amount = 65000.0,
-                currency = "رس",
+                currency = "ر.س",
                 status = PaymentStatus.PAID,
                 lastPayment = "05 أكتوبر 2023",
                 totalTransactions = 65000.0
@@ -59,7 +59,7 @@ class ClientRepositoryImpl @Inject constructor() : ClientRepository {
                 companyName = "شركة التميز التجاري",
                 contactName = "نورة العتيبي",
                 amount = 32000.0,
-                currency = "رس",
+                currency = "ر.س",
                 status = PaymentStatus.PENDING,
                 dueDate = "25 أكتوبر 2023"
             )

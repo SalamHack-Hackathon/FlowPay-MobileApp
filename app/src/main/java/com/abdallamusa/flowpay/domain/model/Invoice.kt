@@ -12,6 +12,6 @@ data class Invoice(
     val clientName: String,
     val amount: Double,
     val service: String,
-    val status: InvoiceStatus = InvoiceStatus.DRAFT,
+    val status: InvoiceStatus = InvoiceStatus.PENDING,
     val date: Long = System.currentTimeMillis()
 )

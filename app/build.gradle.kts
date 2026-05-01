@@ -61,6 +61,10 @@ dependencies {
     ksp(libs.hilt.android.compiler) // KSP handles the code generation
     implementation(libs.androidx.hilt.navigation.compose) // For hiltViewModel() in Compose
 
+    // DataStore & Gson for persistence
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.gson)
+
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

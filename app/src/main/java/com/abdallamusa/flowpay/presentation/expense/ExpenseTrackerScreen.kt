@@ -47,6 +47,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.abdallamusa.flowpay.presentation.viewmodel.ExpenseTrackerViewModel
 import com.abdallamusa.flowpay.presentation.viewmodel.ExpenseTrackerUiState
 import com.abdallamusa.flowpay.utils.Strings
+
 import com.abdallamusa.flowpay.domain.model.ExpenseCategory
 import com.abdallamusa.flowpay.domain.model.displayName
 import com.abdallamusa.flowpay.presentation.components.CustomTextField
@@ -57,6 +58,8 @@ import com.abdallamusa.flowpay.ui.theme.EmeraldPrimary
 import com.abdallamusa.flowpay.ui.theme.TextPrimary
 import com.abdallamusa.flowpay.ui.theme.TextSecondary
 import com.abdallamusa.flowpay.ui.theme.glassCard
+import com.abdallamusa.flowpay.utils.ValidationUtils.filterNumericInput
+
 
 @Composable
 fun ExpenseTrackerScreen(
@@ -117,10 +120,10 @@ fun ExpenseTrackerContent(
 
         CustomTextField(
             value = amount,
-            onValueChange = { amount = it },
+            onValueChange = { amount = it.filterNumericInput() },
             placeholder = Strings.Expense.AMOUNT_HINT,
             icon = Icons.Default.AttachMoney,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -204,7 +207,12 @@ fun ExpenseTrackerContent(
                 containerColor = EmeraldPrimary
             ),
             shape = RoundedCornerShape(12.dp),
-            enabled = !uiState.isLoading && selectedCategory != null
+            enabled = !uiState.isLoading &&
+                    expenseName.isNotBlank() &&
+                    amount.isNotBlank() &&
+                    amount.toDoubleOrNull() != null &&
+                    amount.toDoubleOrNull()!! > 0 &&
+                    selectedCategory != null
         ) {
             Text(
                 text = Strings.Expense.ADD_EXPENSE,

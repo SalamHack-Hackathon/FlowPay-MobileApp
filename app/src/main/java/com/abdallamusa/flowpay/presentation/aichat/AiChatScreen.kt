@@ -82,8 +82,10 @@ fun AiChatScreen(
     viewModel: AiChatViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val currency by viewModel.currency.collectAsState(initial = "ر.س")
     AiChatScreenContent(
         uiState = uiState,
+        currency = currency,
         onSendMessage = { viewModel.sendMessage(it) }
     )
 }
@@ -91,6 +93,7 @@ fun AiChatScreen(
 @Composable
 fun AiChatScreenContent(
     uiState: AiChatUiState,
+    currency: String,
     onSendMessage: (String) -> Unit
 ) {
     val listState = rememberLazyListState()
@@ -371,6 +374,7 @@ fun AiChatScreenPreview() {
             messages = mockMessages,
             isTyping = false
         ),
+        currency = "ر.س",
         onSendMessage = {}
     )
 }

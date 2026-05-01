@@ -51,12 +51,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.util.Log
 import com.abdallamusa.flowpay.utils.Strings
 import com.abdallamusa.flowpay.presentation.components.FlowPayTopAppBar
 import com.abdallamusa.flowpay.presentation.components.TopBarStyle
 import com.abdallamusa.flowpay.presentation.viewmodel.ReportsViewModel
 import com.abdallamusa.flowpay.domain.model.Invoice
 import com.abdallamusa.flowpay.domain.model.InvoiceStatus
+import com.abdallamusa.flowpay.presentation.viewmodel.ReportsUiState
 import com.abdallamusa.flowpay.ui.theme.BackgroundDark
 import com.abdallamusa.flowpay.ui.theme.EmeraldPrimary
 import com.abdallamusa.flowpay.ui.theme.TextPrimary
@@ -70,6 +72,23 @@ fun DashboardScreen(
     onSendClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val currency by viewModel.currency.collectAsState(initial = "USD")
+    DashboardScreenContent(
+        uiState = uiState,
+        currency = currency,
+        onReceiveClick = onReceiveClick,
+        onSendClick = onSendClick
+    )
+}
+
+@Composable
+fun DashboardScreenContent(
+    uiState: ReportsUiState,
+    currency: String,
+    onReceiveClick: () -> Unit = {},
+    onSendClick: () -> Unit = {}
+) {
+    Log.d("FlowPayDebug", "Dashboard recomposed. PendingInvoices: ${uiState.pendingInvoices.size}, Balance: ${uiState.totalNetProfit}")
     val totalBalance = uiState.totalNetProfit
     val monthlyIncome = uiState.incomeData.sum().toDouble()
     val monthlyExpenses = uiState.expenseData.sum().toDouble()
@@ -88,6 +107,7 @@ fun DashboardScreen(
         item {
             BalanceCard(
                 totalBalance = totalBalance,
+                currency = currency,
                 onReceiveClick = onReceiveClick,
                 onSendClick = onSendClick
             )
@@ -97,7 +117,8 @@ fun DashboardScreen(
             FinancialSummaryCards(
                 monthlyIncome = monthlyIncome,
                 monthlyExpenses = monthlyExpenses,
-                netProfit = netProfit
+                netProfit = netProfit,
+                currency = currency
             )
         }
         
@@ -110,7 +131,7 @@ fun DashboardScreen(
         }
         
         item {
-            PendingInvoicesSection(invoices = emptyList())
+            PendingInvoicesSection(invoices = uiState.pendingInvoices, currency = currency)
         }
     }
 }
@@ -120,6 +141,7 @@ fun DashboardScreen(
 @Composable
 fun BalanceCard(
     totalBalance: Double,
+    currency: String,
     onReceiveClick: () -> Unit,
     onSendClick: () -> Unit
 ) {
@@ -146,7 +168,7 @@ fun BalanceCard(
                 verticalAlignment = Alignment.Bottom
             ) {
                 Text(
-                    text = Strings.Common.CURRENCY,
+                    text = currency,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Medium,
                     color = TextPrimary
@@ -239,7 +261,8 @@ fun RowScope.SendButton(
 fun FinancialSummaryCards(
     monthlyIncome: Double,
     monthlyExpenses: Double,
-    netProfit: Double
+    netProfit: Double,
+    currency: String
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -248,18 +271,21 @@ fun FinancialSummaryCards(
         SummaryCard(
             title = Strings.Dashboard.MONTHLY_INCOME,
             value = monthlyIncome,
+            currency = currency,
             icon = Icons.Default.TrendingUp,
             iconColor = EmeraldPrimary
         )
         SummaryCard(
             title = Strings.Dashboard.MONTHLY_EXPENSES,
             value = monthlyExpenses,
+            currency = currency,
             icon = Icons.Default.TrendingDown,
             iconColor = Color.Red
         )
         SummaryCard(
             title = Strings.Dashboard.NET_PROFIT,
             value = netProfit,
+            currency = currency,
             icon = Icons.Default.AccountBalanceWallet,
             iconColor = EmeraldPrimary
         )
@@ -270,6 +296,7 @@ fun FinancialSummaryCards(
 fun SummaryCard(
     title: String,
     value: Double,
+    currency: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     iconColor: Color
 ) {
@@ -313,7 +340,7 @@ fun SummaryCard(
                         String.format(Locale.US, Strings.Common.CURRENCY_FORMAT, value)
                     }
                     Text(
-                        text = "${Strings.Common.CURRENCY} $formattedValue",
+                        text = "$currency $formattedValue",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
@@ -346,13 +373,15 @@ fun CashFlowChart(
         colors = CardDefaults.cardColors(
             containerColor = Color.Transparent
         ),
-        shape = RoundedCornerShape(100.dp)
+        shape = RoundedCornerShape(16.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -372,16 +401,16 @@ fun CashFlowChart(
             Canvas(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(150.dp)
+                    .height(180.dp)
             ) {
                 val barWidth = size.width / (chartData.size * 2f)
                 val spacing = barWidth
-                val maxBarHeight = size.height - 30.dp.toPx()
+                val maxBarHeight = size.height - 40.dp.toPx()
                 
                 chartData.forEachIndexed { index, value ->
                     val barHeight = (value / 100f) * maxBarHeight
                     val x = index * (barWidth + spacing) + spacing / 2
-                    val y = size.height - barHeight - 30.dp.toPx()
+                    val y = size.height - barHeight - 40.dp.toPx()
                     
                     drawRoundRect(
                         color = EmeraldPrimary,
@@ -392,13 +421,13 @@ fun CashFlowChart(
                     
                     val textPaint = android.graphics.Paint().apply {
                         color = android.graphics.Color.WHITE
-                        textSize = 24f
+                        textSize = 20f
                         textAlign = android.graphics.Paint.Align.CENTER
                     }
                     drawContext.canvas.nativeCanvas.drawText(
                         chartMonths[index],
                         x + barWidth / 2,
-                        size.height - 5.dp.toPx(),
+                        size.height - 10.dp.toPx(),
                         textPaint
                     )
                 }
@@ -408,7 +437,7 @@ fun CashFlowChart(
 }
 
 @Composable
-fun PendingInvoicesSection(invoices: List<Invoice>) {
+fun PendingInvoicesSection(invoices: List<Invoice>, currency: String) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -432,7 +461,7 @@ fun PendingInvoicesSection(invoices: List<Invoice>) {
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 invoices.forEach { invoice ->
-                    InvoiceItem(invoice = invoice)
+                    InvoiceItem(invoice = invoice, currency = currency)
                 }
             }
         }
@@ -440,7 +469,7 @@ fun PendingInvoicesSection(invoices: List<Invoice>) {
 }
 
 @Composable
-fun InvoiceItem(invoice: Invoice) {
+fun InvoiceItem(invoice: Invoice, currency: String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -471,7 +500,7 @@ fun InvoiceItem(invoice: Invoice) {
                     )
                 }
                 Text(
-                    text = "${String.format(Locale.US, Strings.Common.CURRENCY_FORMAT, invoice.amount)} ${Strings.Common.CURRENCY}",
+                    text = "${String.format(Locale.US, Strings.Common.CURRENCY_FORMAT, invoice.amount)} $currency",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = EmeraldPrimary
@@ -527,6 +556,7 @@ fun Modifier.glassCard(): Modifier {
 fun BalanceCardPreview() {
     BalanceCard(
         totalBalance = 0.0,
+        currency = "USD",
         onReceiveClick = {},
         onSendClick = {}
     )
@@ -539,7 +569,8 @@ fun FinancialSummaryCardsPreview() {
     FinancialSummaryCards(
         monthlyIncome = 0.0,
         monthlyExpenses = 0.0,
-        netProfit = 0.0
+        netProfit = 0.0,
+        currency = "USD"
     )
 }
 
@@ -549,6 +580,7 @@ fun SummaryCardPreview() {
     SummaryCard(
         title = Strings.Dashboard.MONTHLY_INCOME,
         value = 0.0,
+        currency = "USD",
         icon = Icons.Default.TrendingUp,
         iconColor = EmeraldPrimary
     )
@@ -571,13 +603,28 @@ fun InvoiceItemPreview() {
             service = "Web Development",
             date = System.currentTimeMillis(),
             status = InvoiceStatus.PENDING
-        )
+        ),
+        currency = "USD"
     )
 }
 
-// Preview removed - ReportsViewModel requires repository injection via Hilt
-// @Preview(showBackground = true, showSystemUi = true)
-// @Composable
-// fun DashboardScreenPreview() {
-//     DashboardScreen(viewModel = ReportsViewModel())
-// }
+// Full Dashboard Screen Preview with mock data
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun DashboardScreenPreview() {
+    DashboardScreenContent(
+        uiState = ReportsUiState(
+            incomeData = listOf(50f, 75f, 60f, 90f, 80f, 95f),
+            expenseData = listOf(30f, 45f, 35f, 50f, 40f, 55f),
+            months = listOf(
+                Strings.Months.JANUARY, Strings.Months.FEBRUARY, Strings.Months.MARCH,
+                Strings.Months.APRIL, Strings.Months.MAY, Strings.Months.JUNE
+            ),
+            totalNetProfit = 45000.0,
+            pendingInvoices = emptyList()
+        ),
+        currency = "USD",
+        onReceiveClick = {},
+        onSendClick = {}
+    )
+}

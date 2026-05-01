@@ -62,12 +62,14 @@ fun ReportsScreen(
     viewModel: ReportsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    ReportsScreenContent(uiState = uiState)
+    val currency by viewModel.currency.collectAsState(initial = "ر.س")
+    ReportsScreenContent(uiState = uiState, currency = currency)
 }
 
 @Composable
 fun ReportsScreenContent(
-    uiState: ReportsUiState
+    uiState: ReportsUiState,
+    currency: String
 ) {
     Column(
         modifier = Modifier
@@ -84,7 +86,8 @@ fun ReportsScreenContent(
 
             TotalNetProfitCard(
                 totalNetProfit = uiState.totalNetProfit,
-                profitChange = uiState.profitChange
+                profitChange = uiState.profitChange,
+                currency = currency
             )
 
             FinancialRatingCard(
@@ -98,7 +101,8 @@ fun ReportsScreenContent(
             )
 
             TopServiceCategoriesCard(
-                categories = uiState.topCategories
+                categories = uiState.topCategories,
+                currency = currency
             )
     }
 }
@@ -106,7 +110,8 @@ fun ReportsScreenContent(
 @Composable
 fun TotalNetProfitCard(
     totalNetProfit: Double,
-    profitChange: String
+    profitChange: String,
+    currency: String
 ) {
     Card(
         modifier = Modifier
@@ -154,7 +159,7 @@ fun TotalNetProfitCard(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "${String.format(Locale.US, "%,.0f", totalNetProfit)} رس",
+                    text = "${String.format(Locale.US, "%,.0f", totalNetProfit)} $currency",
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Bold,
                     color = EmeraldPrimary
@@ -417,7 +422,8 @@ fun IncomeVsExpenseChart(
 
 @Composable
 fun TopServiceCategoriesCard(
-    categories: List<ServiceCategory>
+    categories: List<ServiceCategory>,
+    currency: String
 ) {
     Card(
         modifier = Modifier
@@ -441,7 +447,7 @@ fun TopServiceCategoriesCard(
             Spacer(modifier = Modifier.height(16.dp))
             
             categories.forEach { category ->
-                ServiceCategoryItem(category = category)
+                ServiceCategoryItem(category = category, currency = currency)
                 if (category != categories.last()) {
                     Spacer(modifier = Modifier.height(12.dp))
                 }
@@ -451,7 +457,7 @@ fun TopServiceCategoriesCard(
 }
 
 @Composable
-fun ServiceCategoryItem(category: ServiceCategory) {
+fun ServiceCategoryItem(category: ServiceCategory, currency: String) {
     Column {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -484,7 +490,7 @@ fun ServiceCategoryItem(category: ServiceCategory) {
                 )
             }
             Text(
-                text = "${String.format(Locale.US, "%,.0f", category.amount)} رس",
+                text = "${String.format(Locale.US, "%,.0f", category.amount)} $currency",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = EmeraldPrimary
@@ -540,6 +546,7 @@ fun ReportsScreenPreview() {
                 ServiceCategory(Strings.Reports.TAX_CONSULTING, 95000.0, 0.5f),
                 ServiceCategory(Strings.Reports.FINANCIAL_PLANNING, 72500.0, 0.35f)
             )
-        )
+        ),
+        currency = "ر.س"
     )
 }

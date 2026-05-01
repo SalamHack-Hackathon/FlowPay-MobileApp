@@ -63,9 +63,17 @@ fun FlowPayNavGraph(
     ) {
         // Splash Screen
         composable(Screen.Splash.route) {
+            android.util.Log.d("FlowPayDebug", "NavGraph: Splash Screen composable created")
             SplashScreen(
-                onNavigationComplete = {
+                onNavigateToAuth = {
+                    android.util.Log.d("FlowPayDebug", "NavGraph: Navigating Splash -> Auth")
                     navController.navigate(Screen.Auth.route) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                    }
+                },
+                onNavigateToMain = {
+                    android.util.Log.d("FlowPayDebug", "NavGraph: Navigating Splash -> Main")
+                    navController.navigate(Screen.Main.route) {
                         popUpTo(Screen.Splash.route) { inclusive = true }
                     }
                 }
@@ -74,8 +82,10 @@ fun FlowPayNavGraph(
 
         // Auth Screen
         composable(Screen.Auth.route) {
+            android.util.Log.d("FlowPayDebug", "NavGraph: Auth Screen composable created")
             AuthScreen(
                 onLoginSuccess = {
+                    android.util.Log.d("FlowPayDebug", "NavGraph: Navigating Auth -> Main")
                     navController.navigate(Screen.Main.route) {
                         popUpTo(Screen.Auth.route) { inclusive = true }
                     }
@@ -85,6 +95,7 @@ fun FlowPayNavGraph(
 
         // Main Screen (Host for bottom navigation)
         composable(Screen.Main.route) {
+            android.util.Log.d("FlowPayDebug", "NavGraph: Main Screen composable created - THIS IS DASHBOARD")
             MainScreen(rootNavController = navController)
         }
 
@@ -167,19 +178,36 @@ fun MainScreen(
             FlowPayBottomBar(navController = bottomNavController)
         },
         floatingActionButton = {
-            if (currentDestination?.route == Screen.Dashboard.route) {
-                FloatingActionButton(
-                    onClick = { },
-                    containerColor = EmeraldPrimary,
-                    contentColor = BackgroundDark,
-                    shape = androidx.compose.foundation.shape.CircleShape
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Add",
-                        tint = BackgroundDark
-                    )
+            when (currentDestination?.route) {
+                Screen.Dashboard.route -> {
+                    FloatingActionButton(
+                        onClick = { rootNavController.navigate(Screen.AiSmartInvoice.route) },
+                        containerColor = EmeraldPrimary,
+                        contentColor = BackgroundDark,
+                        shape = androidx.compose.foundation.shape.CircleShape
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "AI Smart Invoice",
+                            tint = BackgroundDark
+                        )
+                    }
                 }
+                Screen.Clients.route -> {
+                    FloatingActionButton(
+                        onClick = { rootNavController.navigate(Screen.CreateInvoice.route) },
+                        containerColor = EmeraldPrimary,
+                        contentColor = BackgroundDark,
+                        shape = androidx.compose.foundation.shape.CircleShape
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Create Invoice",
+                            tint = BackgroundDark
+                        )
+                    }
+                }
+                else -> {}
             }
         }
     ) { paddingValues ->
@@ -189,8 +217,6 @@ fun MainScreen(
             modifier = Modifier.padding(paddingValues)
         ) {
             composable(Screen.Dashboard.route) {
-                val viewModel: ReportsViewModel = hiltViewModel()
-
                 DashboardScreen(
                     viewModel = viewModel,
                     onReceiveClick = {

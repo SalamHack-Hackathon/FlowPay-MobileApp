@@ -53,6 +53,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.abdallamusa.flowpay.presentation.viewmodel.ClientsViewModel
 import com.abdallamusa.flowpay.presentation.viewmodel.ClientsUiState
 import com.abdallamusa.flowpay.presentation.viewmodel.ClientFilter
+import com.abdallamusa.flowpay.presentation.viewmodel.ClientSummary
 import com.abdallamusa.flowpay.domain.model.Invoice
 import com.abdallamusa.flowpay.domain.model.InvoiceStatus
 import com.abdallamusa.flowpay.presentation.components.FlowPayTopAppBar
@@ -73,8 +74,10 @@ fun ClientsScreen(
     viewModel: ClientsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val currency by viewModel.currency.collectAsState(initial = "ر.س")
     ClientsScreenContent(
         uiState = uiState,
+        currency = currency,
         onMarkAsPaid = { viewModel.markAsPaid(it) },
         onFilterChange = { viewModel.setFilter(it) }
     )
@@ -83,6 +86,7 @@ fun ClientsScreen(
 @Composable
 fun ClientsScreenContent(
     uiState: ClientsUiState,
+    currency: String,
     onMarkAsPaid: (String) -> Unit,
     onFilterChange: (ClientFilter) -> Unit
 ) {
@@ -102,8 +106,7 @@ fun ClientsScreenContent(
             Spacer(modifier = Modifier.height(16.dp))
 
             FilterButtons(
-                paidCount = uiState.paidCount,
-                pendingCount = uiState.pendingCount,
+                clientSummaries = uiState.clientSummaries,
                 selectedFilter = uiState.selectedFilter,
                 onFilterChange = onFilterChange
             )
@@ -113,11 +116,13 @@ fun ClientsScreenContent(
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(uiState.filteredInvoices) { invoice ->
-                    InvoiceCard(
-                        invoice = invoice,
-                        onMarkAsPaid = { onMarkAsPaid(invoice.id) },
-                        onDetailsClick = {}
+                items(uiState.filteredClients) { client ->
+                    val clientInvoices = uiState.allInvoices.filter { it.clientName == client.clientName }
+                    ClientCard(
+                        client = client,
+                        invoices = clientInvoices,
+                        currency = currency,
+                        onMarkAsPaid = onMarkAsPaid
                     )
                 }
             }
@@ -166,31 +171,19 @@ fun SearchBar(
             singleLine = true
         )
 
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(EmeraldPrimary)
-                .clickable { },
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = null,
-                tint = BackgroundDark,
-                modifier = Modifier.size(24.dp)
-            )
-        }
+      
     }
 }
 
 @Composable
 fun FilterButtons(
-    paidCount: Int,
-    pendingCount: Int,
+    clientSummaries: List<ClientSummary>,
     selectedFilter: ClientFilter,
     onFilterChange: (ClientFilter) -> Unit
 ) {
+    val paidCount = clientSummaries.count { it.pendingCount == 0 && it.paidCount > 0 }
+    val pendingCount = clientSummaries.count { it.pendingCount > 0 }
+    
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -232,10 +225,11 @@ fun FilterButton(
 }
 
 @Composable
-fun InvoiceCard(
-    invoice: Invoice,
-    onMarkAsPaid: () -> Unit,
-    onDetailsClick: () -> Unit
+fun ClientCard(
+    client: ClientSummary,
+    invoices: List<Invoice>,
+    currency: String,
+    onMarkAsPaid: (String) -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -249,7 +243,7 @@ fun InvoiceCard(
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-             horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
@@ -260,7 +254,7 @@ fun InvoiceCard(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = invoice.clientName.first().toString(),
+                        text = client.clientName.first().toString(),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -271,175 +265,166 @@ fun InvoiceCard(
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(
-                        text = invoice.clientName,
+                        text = client.clientName,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
                     )
                     Text(
-                        text = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.US).format(java.util.Date(invoice.date)),
+                        text = "${client.invoiceCount} فاتورة",
                         fontSize = 14.sp,
                         color = TextSecondary
                     )
                 }
 
-                InvoiceStatusBadge(status = invoice.status)
+                ClientStatusBadge(
+                    pendingCount = client.pendingCount,
+                    paidCount = client.paidCount
+                )
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            if (invoice.status == InvoiceStatus.PENDING) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = Strings.Clients.DUE_DATE,
-                            fontSize = 12.sp,
-                            color = TextSecondary
-                        )
-                        Text(
-                            text = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.US).format(java.util.Date(invoice.date)),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = TextPrimary
-                        )
-                    }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "الإجمالي",
+                        fontSize = 12.sp,
+                        color = TextSecondary
+                    )
+                    Text(
+                        text = "${String.format(Locale.US, "%,.0f", client.totalDue)} $currency",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary
+                    )
+                }
+                
+                if (client.pendingCount > 0) {
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
-                            text = Strings.Clients.AMOUNT_DUE,
+                            text = "مستحق",
                             fontSize = 12.sp,
                             color = TextSecondary
                         )
                         Text(
-                            text = "${String.format(Locale.US, "%,.0f", invoice.amount)} SAR",
+                            text = "${String.format(Locale.US, "%,.0f", client.pendingAmount)} $currency",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = WarningColor
+                        )
+                    }
+                } else {
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            text = "مدفوع",
+                            fontSize = 12.sp,
+                            color = TextSecondary
+                        )
+                        Text(
+                            text = "${String.format(Locale.US, "%,.0f", client.paidAmount)} $currency",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = EmeraldPrimary
                         )
                     }
                 }
+            }
 
-                Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Button(
-                        onClick = onMarkAsPaid,
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = EmeraldPrimary
-                        ),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text(
-                            text = Strings.Clients.CONFIRM_PAYMENT,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = BackgroundDark
-                        )
-                    }
-                    Button(
-                        onClick = onDetailsClick,
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = SecondaryButtonBackground
-                        ),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text(
-                            text = Strings.Clients.DETAILS,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = TextPrimary
-                        )
-                    }
-                }
-            } else if (invoice.status == InvoiceStatus.PAID) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = "Payment Date",
-                            fontSize = 12.sp,
-                            color = TextSecondary
-                        )
-                        Text(
-                            text = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.US).format(java.util.Date(invoice.date)),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = TextPrimary
-                        )
-                    }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = Strings.Clients.AMOUNT_DUE,
-                            fontSize = 12.sp,
-                            color = TextSecondary
-                        )
-                        Text(
-                            text = "${String.format(Locale.US, "%,.0f", invoice.amount)} SAR",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = EmeraldPrimary
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Button(
-                        onClick = {},
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = SecondaryButtonBackground
-                        ),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text(
-                            text = Strings.Clients.COMPLETED,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = TextPrimary
-                        )
-                    }
-                    Button(
-                        onClick = onDetailsClick,
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = SecondaryButtonBackground
-                        ),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text(
-                            text = Strings.Clients.DETAILS,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = TextPrimary
-                        )
-                    }
-                }
+            // Show individual invoices with "تم الدفع" button for pending ones
+            invoices.forEach { invoice ->
+                InvoiceRow(
+                    invoice = invoice,
+                    currency = currency,
+                    onMarkAsPaid = onMarkAsPaid
+                )
+                Spacer(modifier = Modifier.height(8.dp))
             }
         }
     }
 }
 
 @Composable
-fun InvoiceStatusBadge(status: InvoiceStatus) {
-    val (text, color) = when (status) {
-        InvoiceStatus.PAID -> Strings.Clients.PAID to EmeraldPrimary
-        InvoiceStatus.PENDING -> Strings.Clients.PENDING to WarningColor
+fun InvoiceRow(
+    invoice: Invoice,
+    currency: String,
+    onMarkAsPaid: (String) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                color = if (invoice.status == InvoiceStatus.PAID) 
+                    EmeraldPrimary.copy(alpha = 0.1f) 
+                else 
+                    CardBackground,
+                shape = RoundedCornerShape(8.dp)
+            )
+            .padding(12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = invoice.service,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = TextPrimary
+            )
+            Text(
+                text = "${String.format(Locale.US, "%,.0f", invoice.amount)} $currency",
+                fontSize = 13.sp,
+                color = TextSecondary
+            )
+        }
+
+        if (invoice.status == InvoiceStatus.PENDING) {
+            Button(
+                onClick = { onMarkAsPaid(invoice.id) },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = EmeraldPrimary
+                ),
+                shape = RoundedCornerShape(6.dp),
+                modifier = Modifier.height(32.dp)
+            ) {
+                Text(
+                    text = "تم الدفع",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = BackgroundDark
+                )
+            }
+        } else {
+            Text(
+                text = "مدفوع",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                color = EmeraldPrimary,
+                modifier = Modifier
+                    .background(
+                        color = EmeraldPrimary.copy(alpha = 0.2f),
+                        shape = RoundedCornerShape(6.dp)
+                    )
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun ClientStatusBadge(
+    pendingCount: Int,
+    paidCount: Int
+) {
+    val (text, color) = when {
+        pendingCount > 0 -> Strings.Clients.PENDING to WarningColor
+        paidCount > 0 -> Strings.Clients.PAID to EmeraldPrimary
         else -> Strings.Clients.PENDING to WarningColor
     }
 
@@ -460,32 +445,53 @@ fun InvoiceStatusBadge(status: InvoiceStatus) {
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun ClientsScreenPreview() {
+    val mockClients = listOf(
+        ClientSummary(
+            clientName = "شركة الأفق",
+            totalDue = 15000.0,
+            paidAmount = 5000.0,
+            pendingAmount = 10000.0,
+            invoiceCount = 3,
+            paidCount = 1,
+            pendingCount = 2
+        ),
+        ClientSummary(
+            clientName = "مؤسسة النور",
+            totalDue = 25000.0,
+            paidAmount = 25000.0,
+            pendingAmount = 0.0,
+            invoiceCount = 2,
+            paidCount = 2,
+            pendingCount = 0
+        )
+    )
+    
     val mockInvoices = listOf(
         Invoice(
             id = "1",
             clientName = "شركة الأفق",
-            amount = 15000.0,
-            service = "Web Development",
-            date = System.currentTimeMillis(),
-            status = InvoiceStatus.PENDING
+            amount = 5000.0,
+            service = "استشارات",
+            status = InvoiceStatus.PAID
         ),
         Invoice(
             id = "2",
-            clientName = "مؤسسة النور",
-            amount = 25000.0,
-            service = "Mobile App",
-            date = System.currentTimeMillis(),
-            status = InvoiceStatus.PAID
+            clientName = "شركة الأفق",
+            amount = 10000.0,
+            service = "تصميم",
+            status = InvoiceStatus.PENDING
         )
     )
     
     ClientsScreenContent(
         uiState = ClientsUiState(
             allInvoices = mockInvoices,
-            filteredInvoices = mockInvoices,
+            clientSummaries = mockClients,
+            filteredClients = mockClients,
             isLoading = false,
             error = null
         ),
+        currency = "USD",
         onMarkAsPaid = {},
         onFilterChange = {}
     )

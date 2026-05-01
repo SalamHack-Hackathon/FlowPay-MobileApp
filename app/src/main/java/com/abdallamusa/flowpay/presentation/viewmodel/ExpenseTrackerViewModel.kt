@@ -2,7 +2,7 @@ package com.abdallamusa.flowpay.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.abdallamusa.flowpay.data.repository.FakeFlowPayRepositoryImpl
+import com.abdallamusa.flowpay.domain.repository.FlowPayRepository
 import com.abdallamusa.flowpay.domain.model.Expense
 import com.abdallamusa.flowpay.domain.model.ExpenseCategory
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,7 +21,7 @@ data class ExpenseTrackerUiState(
 
 @HiltViewModel
 class ExpenseTrackerViewModel @Inject constructor(
-    private val repository: FakeFlowPayRepositoryImpl
+    private val repository: FlowPayRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ExpenseTrackerUiState())

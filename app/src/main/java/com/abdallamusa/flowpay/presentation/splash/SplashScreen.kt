@@ -13,6 +13,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,6 +26,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import android.util.Log
 import com.abdallamusa.flowpay.utils.Strings
 import com.abdallamusa.flowpay.ui.theme.EmeraldDark
 import com.abdallamusa.flowpay.ui.theme.EmeraldPrimary
@@ -31,12 +35,19 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun SplashScreen(
-    onNavigationComplete: () -> Unit
+    onNavigateToAuth: () -> Unit,
+    onNavigateToMain: () -> Unit
 ) {
+    val viewModel: SplashViewModel = hiltViewModel()
+    val hasRegisteredUser by viewModel.hasRegisteredUser.collectAsState()
+    
+    Log.d("FlowPayDebug", "SplashScreen recomposed - hasRegisteredUser: $hasRegisteredUser")
+    
     val scale = remember { Animatable(0f) }
     val alpha = remember { Animatable(0f) }
 
     LaunchedEffect(key1 = true) {
+        Log.d("FlowPayDebug", "SplashScreen LaunchedEffect(key1=true) started - animation beginning")
         scale.animateTo(
             targetValue = 1f,
             animationSpec = tween(durationMillis = 800)
@@ -46,7 +57,26 @@ fun SplashScreen(
             animationSpec = tween(durationMillis = 800)
         )
         delay(2000)
-        onNavigationComplete()
+        
+        Log.d("FlowPayDebug", "SplashScreen animation complete - calling checkRegisteredUser()")
+        viewModel.checkRegisteredUser()
+    }
+
+    LaunchedEffect(hasRegisteredUser) {
+        Log.d("FlowPayDebug", "SplashScreen LaunchedEffect(hasRegisteredUser) triggered - value: $hasRegisteredUser")
+        when (hasRegisteredUser) {
+            true -> {
+                Log.d("FlowPayDebug", "SplashScreen navigating to MAIN (Dashboard)")
+                onNavigateToMain()
+            }
+            false -> {
+                Log.d("FlowPayDebug", "SplashScreen navigating to AUTH")
+                onNavigateToAuth()
+            }
+            null -> {
+                Log.d("FlowPayDebug", "SplashScreen hasRegisteredUser is null - no navigation yet")
+            }
+        }
     }
 
     Box(
@@ -102,6 +132,7 @@ fun SplashScreen(
 @Composable
 fun SplashScreenPreview() {
     SplashScreen(
-        onNavigationComplete = {}
+        onNavigateToAuth = {},
+        onNavigateToMain = {}
     )
 }

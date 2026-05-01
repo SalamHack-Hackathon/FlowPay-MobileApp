@@ -16,10 +16,12 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,7 +43,9 @@ import com.abdallamusa.flowpay.R
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.abdallamusa.flowpay.presentation.components.AuthTextField
+import com.abdallamusa.flowpay.presentation.viewmodel.AuthViewModel
 import com.abdallamusa.flowpay.utils.Country
 import com.abdallamusa.flowpay.presentation.components.PhoneTextField
 import com.abdallamusa.flowpay.utils.CountryUtils
@@ -53,10 +57,12 @@ import com.abdallamusa.flowpay.ui.theme.AuthHighlightColor
 import com.abdallamusa.flowpay.ui.theme.AuthLabelColor
 import com.abdallamusa.flowpay.ui.theme.ErrorColor
 import com.abdallamusa.flowpay.ui.theme.ScreenBackground
+import com.abdallamusa.flowpay.ui.theme.TextPrimary
 import com.abdallamusa.flowpay.utils.ValidationUtils
 import com.abdallamusa.flowpay.utils.ValidationUtils.getError
 import com.abdallamusa.flowpay.utils.ValidationUtils.isValid
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AuthScreenContent(
     isLoginMode: Boolean,
@@ -79,12 +85,18 @@ fun AuthScreenContent(
     onRegisterClick: () -> Unit,
     selectedCountry: Country,
     onCountrySelected: (Country) -> Unit,
+    selectedCurrency: String,
+    onCurrencySelected: (String) -> Unit,
+    currencyExpanded: Boolean,
+    onCurrencyExpandedChange: (Boolean) -> Unit,
     // Error states
     emailError: String? = null,
     passwordError: String? = null,
     confirmPasswordError: String? = null,
     fullNameError: String? = null,
-    phoneError: String? = null
+    phoneError: String? = null,
+    currencyError: String? = null,
+    generalError: String? = null
 ) {
     // Force RTL direction for Arabic Layout
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
@@ -121,6 +133,16 @@ fun AuthScreenContent(
             }
 
             Spacer(modifier = Modifier.height(32.dp))
+
+            // General Error Message
+            if (generalError != null) {
+                Text(
+                    text = generalError,
+                    color = ErrorColor,
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+            }
 
             // --- THE MAIN CARD ---
             Column(
@@ -231,6 +253,81 @@ fun AuthScreenContent(
                         if (phoneError != null) {
                             Text(
                                 text = phoneError,
+                                color = ErrorColor,
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(top = 4.dp, start = 4.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                }
+
+                // Currency Field (Sign Up Only)
+                AnimatedVisibility(visible = !isLoginMode) {
+                    Column {
+                        Text(
+                            text = "العملة",
+                            fontSize = 14.sp,
+                            color = AuthLabelColor,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                         ExposedDropdownMenuBox(
+                            expanded = currencyExpanded,
+                            onExpandedChange = onCurrencyExpandedChange,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            OutlinedTextField(
+                                value = selectedCurrency,
+                                onValueChange = {},
+                                readOnly = true,
+                                trailingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.ArrowDropDown,
+                                        contentDescription = null,
+                                        tint = if (currencyError != null) ErrorColor else AuthLabelColor
+                                    )
+                                },
+                                modifier = Modifier
+                                    .menuAnchor()
+                                    .fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = if (currencyError != null) ErrorColor else AuthHighlightColor,
+                                    unfocusedBorderColor = if (currencyError != null) ErrorColor else AuthCardBorderColor,
+                                    focusedContainerColor = AuthCardBackground,
+                                    unfocusedContainerColor = AuthCardBackground,
+                                    focusedTextColor = TextPrimary,
+                                    unfocusedTextColor = TextPrimary
+                                ),
+                                isError = currencyError != null
+                            )
+                            ExposedDropdownMenu(
+                                expanded = currencyExpanded,
+                                onDismissRequest = { onCurrencyExpandedChange(false) },
+                                modifier = Modifier.background(AuthCardBackground)
+                            ) {
+                                val currencies = listOf("ر.س", "د.إ", "ج.م", "د.ك", "ر.ق")
+                                currencies.forEach { currency ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = currency,
+                                                color = TextPrimary,
+                                                fontSize = 14.sp
+                                            )
+                                        },
+                                        onClick = {
+                                            onCurrencySelected(currency)
+                                            onCurrencyExpandedChange(false)
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                        if (currencyError != null) {
+                            Text(
+                                text = currencyError,
                                 color = ErrorColor,
                                 fontSize = 12.sp,
                                 modifier = Modifier.padding(top = 4.dp, start = 4.dp)
@@ -402,6 +499,10 @@ fun AuthScreenContent(
 fun AuthScreen(
     onLoginSuccess: () -> Unit
 ) {
+    val viewModel: AuthViewModel = hiltViewModel()
+    val loginState by viewModel.loginState.collectAsState()
+    val registerState by viewModel.registerState.collectAsState()
+    
     var isLoginMode by remember { mutableStateOf(true) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -411,6 +512,8 @@ fun AuthScreen(
     var isPasswordVisible by remember { mutableStateOf(false) }
     var isConfirmPasswordVisible by remember { mutableStateOf(false) }
     var selectedCountry by remember { mutableStateOf(CountryUtils.getAllCountries.first()) }
+    var selectedCurrency by remember { mutableStateOf("") }
+    var currencyExpanded by remember { mutableStateOf(false) }
 
     // Error states
     var emailError by remember { mutableStateOf<String?>(null) }
@@ -418,6 +521,8 @@ fun AuthScreen(
     var confirmPasswordError by remember { mutableStateOf<String?>(null) }
     var fullNameError by remember { mutableStateOf<String?>(null) }
     var phoneError by remember { mutableStateOf<String?>(null) }
+    var currencyError by remember { mutableStateOf<String?>(null) }
+    var generalError by remember { mutableStateOf<String?>(null) }
 
     // Clear errors when mode changes
     LaunchedEffect(isLoginMode) {
@@ -426,6 +531,38 @@ fun AuthScreen(
         confirmPasswordError = null
         fullNameError = null
         phoneError = null
+        currencyError = null
+        generalError = null
+        viewModel.clearLoginState()
+        viewModel.clearRegisterState()
+    }
+
+    // Handle login state changes
+    LaunchedEffect(loginState.isSuccess) {
+        if (loginState.isSuccess) {
+            onLoginSuccess()
+        }
+    }
+
+    // Handle login errors
+    LaunchedEffect(loginState.error) {
+        if (loginState.error != null) {
+            generalError = loginState.error
+        }
+    }
+
+    // Handle register state changes
+    LaunchedEffect(registerState.isSuccess) {
+        if (registerState.isSuccess) {
+            onLoginSuccess()
+        }
+    }
+
+    // Handle register errors
+    LaunchedEffect(registerState.error) {
+        if (registerState.error != null) {
+            generalError = registerState.error
+        }
     }
 
     // Clear errors when input changes
@@ -435,6 +572,8 @@ fun AuthScreen(
         confirmPasswordError = null
         fullNameError = null
         phoneError = null
+        currencyError = null
+        generalError = null
     }
 
     fun validateAndLogin(): Boolean {
@@ -483,6 +622,10 @@ fun AuthScreen(
             phoneError = phoneResult.getError()
             isValid = false
         }
+        if (selectedCurrency.isBlank()) {
+            currencyError = "يرجى اختيار العملة"
+            isValid = false
+        }
         return isValid
     }
 
@@ -503,15 +646,29 @@ fun AuthScreen(
         isConfirmPasswordVisible = isConfirmPasswordVisible,
         onToggleConfirmPasswordVisibility = { isConfirmPasswordVisible = !isConfirmPasswordVisible },
         onLoginModeToggle = { isLoginMode = !isLoginMode },
-        onLoginClick = { if (validateAndLogin()) onLoginSuccess() },
-        onRegisterClick = { if (validateAndRegister()) onLoginSuccess() },
+        onLoginClick = {
+            if (validateAndLogin()) {
+                viewModel.loginUser(email, password)
+            }
+        },
+        onRegisterClick = {
+            if (validateAndRegister()) {
+                viewModel.registerUser(fullName, email, phoneNumber, password, selectedCurrency)
+            }
+        },
         selectedCountry = selectedCountry,
         onCountrySelected = { selectedCountry = it },
+        selectedCurrency = selectedCurrency,
+        onCurrencySelected = { selectedCurrency = it },
+        currencyExpanded = currencyExpanded,
+        onCurrencyExpandedChange = { currencyExpanded = it },
         emailError = emailError,
         passwordError = passwordError,
         confirmPasswordError = confirmPasswordError,
         fullNameError = fullNameError,
-        phoneError = phoneError
+        phoneError = phoneError,
+        currencyError = currencyError,
+        generalError = generalError
     )
 }
 
@@ -536,6 +693,8 @@ private fun AuthScreenPreview(
     var isPasswordVisible by remember { mutableStateOf(false) }
     var isConfirmPasswordVisible by remember { mutableStateOf(false) }
     var selectedCountry by remember { mutableStateOf(CountryUtils.getAllCountries.first()) }
+    var selectedCurrency by remember { mutableStateOf("ر.س") }
+    var currencyExpanded by remember { mutableStateOf(false) }
 
     AuthScreenContent(
         isLoginMode = isLoginMode,
@@ -557,7 +716,11 @@ private fun AuthScreenPreview(
         onLoginClick = { },
         onRegisterClick = { },
         selectedCountry = selectedCountry,
-        onCountrySelected = { selectedCountry = it }
+        onCountrySelected = { selectedCountry = it },
+        selectedCurrency = selectedCurrency,
+        onCurrencySelected = { selectedCurrency = it },
+        currencyExpanded = currencyExpanded,
+        onCurrencyExpandedChange = { currencyExpanded = it }
     )
 }
 
@@ -584,7 +747,11 @@ private fun AuthScreenLoginEmptyPreview() {
         onLoginClick = { },
         onRegisterClick = { },
         selectedCountry = CountryUtils.getAllCountries.first(),
-        onCountrySelected = { }
+        onCountrySelected = { },
+        selectedCurrency = "ر.س",
+        onCurrencySelected = { },
+        currencyExpanded = false,
+        onCurrencyExpandedChange = { }
     )
 }
 
@@ -612,6 +779,10 @@ private fun AuthScreenLoginErrorsPreview() {
         onRegisterClick = { },
         selectedCountry = CountryUtils.getAllCountries.first(),
         onCountrySelected = { },
+        selectedCurrency = "ر.س",
+        onCurrencySelected = { },
+        currencyExpanded = false,
+        onCurrencyExpandedChange = { },
         emailError = "البريد الإلكتروني غير صالح",
         passwordError = "كلمة المرور يجب أن تكون 6 أحرف على الأقل"
     )
@@ -640,7 +811,11 @@ private fun AuthScreenSignUpFilledPreview() {
         onLoginClick = { },
         onRegisterClick = { },
         selectedCountry = CountryUtils.getAllCountries.first { it.code == "SA" },
-        onCountrySelected = { }
+        onCountrySelected = { },
+        selectedCurrency = "ر.س",
+        onCurrencySelected = { },
+        currencyExpanded = false,
+        onCurrencyExpandedChange = { }
     )
 }
 
@@ -668,6 +843,10 @@ private fun AuthScreenSignUpErrorsPreview() {
         onRegisterClick = { },
         selectedCountry = CountryUtils.getAllCountries.first(),
         onCountrySelected = { },
+        selectedCurrency = "ر.س",
+        onCurrencySelected = { },
+        currencyExpanded = false,
+        onCurrencyExpandedChange = { },
         fullNameError = "الاسم يجب أن يكون 3 أحرف على الأقل",
         emailError = "البريد الإلكتروني مطلوب",
         passwordError = "كلمة المرور يجب أن تكون 8 أحرف على الأقل",

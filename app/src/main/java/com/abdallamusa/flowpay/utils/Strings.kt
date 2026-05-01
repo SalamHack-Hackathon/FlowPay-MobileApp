@@ -76,7 +76,7 @@ object Strings {
 
     // Common
     object Common {
-        const val CURRENCY = "SAR"
+        const val CURRENCY = "ر.س"
         const val CURRENCY_FORMAT = "%,.0f"
     }
 
@@ -188,7 +188,7 @@ object Strings {
     // Reports
     object Reports {
         const val TITLE = "التقارير والأداء"
-        const val SUBTITLE = "نظرة شاملة على الأداء المالي لشهر أكتوبر ۲۰۲۳"
+        const val SUBTITLE = "نظرة شاملة على الأداء المالي "
         const val CURRENT_MONTH = "الشهر الحالي"
         const val TOTAL_NET_PROFIT = "صافي الربح الإجمالي"
         const val LAST_MONTH = "عن الشهر الماضي"

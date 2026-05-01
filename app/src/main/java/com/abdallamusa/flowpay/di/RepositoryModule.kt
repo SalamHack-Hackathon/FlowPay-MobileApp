@@ -6,8 +6,10 @@ import com.abdallamusa.flowpay.data.repository.InvoiceRepositoryImpl
 import com.abdallamusa.flowpay.domain.repository.ExpenseRepository
 import com.abdallamusa.flowpay.domain.repository.FlowPayRepository
 import com.abdallamusa.flowpay.domain.repository.InvoiceRepository
+import com.google.gson.Gson
 import dagger.Binds
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
@@ -33,4 +35,12 @@ abstract class RepositoryModule {
     abstract fun bindFlowPayRepository(
         fakeFlowPayRepositoryImpl: FakeFlowPayRepositoryImpl
     ): FlowPayRepository
+
+    companion object {
+        @Provides
+        @Singleton
+        fun provideGson(): Gson {
+            return Gson()
+        }
+    }
 }
