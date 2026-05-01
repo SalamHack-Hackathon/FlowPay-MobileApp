@@ -90,7 +90,6 @@ FlowPay follows **Clean Architecture** principles with **MVVM** pattern for a sc
 | **UI Toolkit** | Jetpack Compose (Material 3) |
 | **Navigation** | Jetpack Navigation Compose |
 | **State Management** | StateFlow, Flow |
-| **Image Loading** | Coil |
 | **Animations** | Compose Animation |
 
 ### Architecture & DI
@@ -102,19 +101,8 @@ FlowPay follows **Clean Architecture** principles with **MVVM** pattern for a sc
 | **DI Framework** | Hilt (Dagger) |
 | **Async** | Coroutines + Flow |
 
-### Data Layer
 
-| Component | Technology |
-|-----------|-----------|
 
-| **Networking** | Retrofit + OkHttp |
-
-### Security
-
-| Component | Technology |
-|-----------|-----------|
-
-| **API Security** | Auth Interceptor |
 
 ---
 
@@ -287,30 +275,6 @@ All screens are properly connected through `FlowPayNavGraph` using Jetpack Navig
 - Android SDK 34
 - Minimum SDK 26 (Android 8.0)
 
-### Installation
-
-1. **Clone the repository**
-```bash
-git clone https://github.com/yourusername/FlowPay.git
-cd FlowPay
-```
-
-2. **Open in Android Studio**
-   - Open Android Studio
-   - Select "Open an Existing Project"
-   - Navigate to the cloned directory
-
-3. **Sync Gradle**
-   - Android Studio will automatically sync Gradle
-   - Wait for the sync to complete
-
-4. **Run the app**
-   - Connect an Android device or start an emulator
-   - Click the Run button in Android Studio
-   - Or use command line:
-```bash
-./gradlew installDebug
-```
 
 ---
 
@@ -362,29 +326,11 @@ retrofit = "2.9.0"
 kotlinx-coroutines = "1.7.3"
 ```
 
----
-
-## 🤝 Contributing
-
-This is an MVP project for fintech competition. Contributions are welcome!
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Open a Pull Request
 
 ---
 
-## 📄 License
+##
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
----
-
-## 👨‍💻 Author
-
-**Abdallamusa**
 - Fintech Competition MVP
 - Built with ❤️ using Kotlin & Jetpack Compose
 
